@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F9FAFB;
+  --foreground: #1A1A1A;
+
+  /* Grassruts Brand Colors */
+  --color-primary: #008751;
+  --color-primary-dark: #006B40;
+  --color-primary-light: #00A863;
+  --color-gold: #D4AF37;
+  --color-error: #DC2626;
+  --color-warning: #F59E0B;
+  --color-success: #10B981;
+  --color-text-dark: #1A1A1A;
+  --color-text-gray: #6B7280;
+  --color-border: #E5E7EB;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+  --color-gold: var(--color-gold);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
+  --color-success: var(--color-success);
+  --color-text-gray: var(--color-text-gray);
+  --color-border: var(--color-border);
+  --font-sans: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Leaflet map popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+}
+.leaflet-popup-content {
+  margin: 12px !important;
+  width: 220px !important;
+}
+.leaflet-popup-tip-container {
+  display: none;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
