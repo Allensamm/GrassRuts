@@ -128,11 +128,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Government official?{' '}
-          <Link href="/gov/login" className="text-[#008751] font-medium hover:underline">
-            Government Portal →
-          </Link>
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Government agency?{' '}
+          <a href="mailto:api@grassruts.com" className="text-[#008751] font-medium hover:underline">
+            Request API access →
+          </a>
         </p>
       </div>
     </div>
