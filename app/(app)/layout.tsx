@@ -52,6 +52,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </main>
         <BottomNav />
+        <footer className="hidden md:block border-t border-gray-100 bg-white py-3 px-6 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} Grassruts · A{' '}
+          <span className="font-semibold text-gray-500">join2getherwork</span>{' '}
+          product · The Root of Change
+        </footer>
       </div>
     </div>
   )
