@@ -31,6 +31,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [emailSent, setEmailSent] = useState('')
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -54,13 +55,38 @@ export default function SignupPage() {
         return
       }
 
-      router.push('/signup/profile')
-      router.refresh()
+      setEmailSent(data.email)
     } catch {
       setError('Network error. Check your connection.')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-4">
+        <div className="max-w-md w-full mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex flex-col items-center gap-1">
+              <Image src="/logo.svg" alt="Grassruts" width={200} height={40} priority />
+              <p className="text-sm text-gray-500">The Root of Change</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+            <div className="text-5xl mb-4">📬</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
+            <p className="text-gray-500 text-sm mb-4">
+              We sent a confirmation link to<br />
+              <span className="font-semibold text-gray-800">{emailSent}</span>
+            </p>
+            <p className="text-gray-400 text-xs leading-relaxed">
+              Click the link in the email to activate your account. Check your spam folder if you don&apos;t see it.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
