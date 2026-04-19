@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { moderateIssue } from '@/lib/moderation'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { validatePhotoUrls } from '@/lib/validate-photo-urls'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -15,6 +17,19 @@ const schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 new issue submissions per IP per hour
+  const ip = getClientIp(request)
+  const rl = rateLimit({ key: `issues:create:${ip}`, limit: 5, windowMs: 60 * 60 * 1000 })
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'You are submitting too many reports. Please wait before trying again.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
+    )
+  }
+
   try {
     const body = await request.json()
     const data = schema.parse(body)
@@ -100,8 +115,12 @@ export async function POST(request: NextRequest) {
 
     if (reportError) return NextResponse.json({ error: reportError.message }, { status: 500 })
 
-    // Store photo evidence
+    // Validate all photo URLs belong to this project's Supabase storage bucket
+    // before persisting them, preventing injection of arbitrary external URLs.
     if (data.photo_urls?.length) {
+      if (!validatePhotoUrls(data.photo_urls)) {
+        return NextResponse.json({ error: 'Invalid photo URLs' }, { status: 400 })
+      }
       await supabase.from('evidence').insert(
         data.photo_urls.map(url => ({ report_id: report.id, url, type: 'image' as const }))
       )

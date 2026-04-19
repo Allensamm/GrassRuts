@@ -3,7 +3,38 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const PROTECTED_PATHS = ['/dashboard', '/report', '/profile', '/explore', '/notifications', '/my-reports']
 
+// State-mutating methods we want to protect from cross-site forgery
+const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+// Government API routes that legitimately receive cross-origin requests
+const CSRF_EXEMPT = ['/api/public/']
+
+function originMatchesHost(request: NextRequest): boolean {
+  const origin = request.headers.get('origin')
+  if (!origin) return true // no Origin = same-origin or server-to-server
+  try {
+    return new URL(origin).host === (request.headers.get('host') ?? '')
+  } catch {
+    return false
+  }
+}
+
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── CSRF origin check ──────────────────────────────────────────────────
+  if (
+    CSRF_METHODS.has(request.method) &&
+    pathname.startsWith('/api/') &&
+    !CSRF_EXEMPT.some(p => pathname.startsWith(p)) &&
+    !originMatchesHost(request)
+  ) {
+    return NextResponse.json(
+      { error: 'Forbidden: cross-origin request rejected' },
+      { status: 403 }
+    )
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

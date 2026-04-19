@@ -11,7 +11,13 @@ import { Eye, EyeOff } from 'lucide-react'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be at most 128 characters')
+    .refine(p => /[A-Z]/.test(p), 'Must contain at least one uppercase letter')
+    .refine(p => /[a-z]/.test(p), 'Must contain at least one lowercase letter')
+    .refine(p => /[0-9]/.test(p), 'Must contain at least one number'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords don't match",

@@ -92,7 +92,7 @@ export default function NigeriaMap() {
               key={i}
               x1={CITIES[a].x} y1={CITIES[a].y}
               x2={CITIES[b].x} y2={CITIES[b].y}
-              stroke="rgba(0,212,106,0.22)"
+              stroke="rgba(42,174,106,0.25)"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
@@ -105,14 +105,14 @@ export default function NigeriaMap() {
             <g key={city.name}>
               <circle
                 cx={city.x} cy={city.y} r={5}
-                fill="#008751"
+                fill="#1B7D46"
                 style={{
                   animation: 'pulse-dot 2.8s ease-in-out infinite',
                   animationDelay: city.delay,
                   transformOrigin: `${city.x}px ${city.y}px`,
                 }}
               />
-              <circle cx={city.x} cy={city.y} r={8} fill="rgba(0,135,81,0.15)" />
+              <circle cx={city.x} cy={city.y} r={8} fill="rgba(27,125,70,0.18)" />
             </g>
           ))}
         </g>
@@ -125,7 +125,7 @@ export default function NigeriaMap() {
               <circle
                 cx={city.x} cy={city.y} r={10}
                 fill="none"
-                stroke="#00D46A"
+                stroke="#2AAE6A"
                 strokeWidth="1.5"
                 style={{
                   animation: 'ping-ring 2.4s ease-out infinite',
@@ -137,7 +137,7 @@ export default function NigeriaMap() {
               <circle
                 cx={city.x} cy={city.y} r={10}
                 fill="none"
-                stroke="#00D46A"
+                stroke="#2AAE6A"
                 strokeWidth="1"
                 style={{
                   animation: 'ping-ring 2.4s ease-out infinite',
@@ -146,11 +146,11 @@ export default function NigeriaMap() {
                 }}
               />
               {/* Glow halo */}
-              <circle cx={city.x} cy={city.y} r={10} fill="rgba(0,212,106,0.12)" />
+              <circle cx={city.x} cy={city.y} r={10} fill="rgba(42,174,106,0.14)" />
               {/* Core dot */}
               <circle
                 cx={city.x} cy={city.y} r={7}
-                fill="#00D46A"
+                fill="#2AAE6A"
                 style={{
                   animation: 'pulse-dot 2.8s ease-in-out infinite',
                   animationDelay: city.delay,

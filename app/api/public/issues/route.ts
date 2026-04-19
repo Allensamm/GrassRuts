@@ -47,9 +47,17 @@ export async function GET(request: NextRequest) {
     .order('report_count', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  // Apply jurisdiction from API key if set (can be overridden by explicit params)
-  const effectiveLgaId = lga_id ?? (apiKey.lga_id ? String(apiKey.lga_id) : null)
-  const effectiveStateId = state_id ?? (apiKey.state_id ? String(apiKey.state_id) : null)
+  // Jurisdiction scoping: if the API key is tied to a specific LGA or state,
+  // always use that scope — query params cannot override it. This prevents an
+  // LGA official from querying another jurisdiction's data by passing a
+  // different lga_id/state_id in the URL.
+  const keyHasJurisdiction = apiKey.lga_id != null || apiKey.state_id != null
+  const effectiveLgaId = keyHasJurisdiction
+    ? (apiKey.lga_id ? String(apiKey.lga_id) : null)
+    : lga_id
+  const effectiveStateId = keyHasJurisdiction
+    ? (apiKey.state_id ? String(apiKey.state_id) : null)
+    : state_id
 
   if (effectiveLgaId) {
     query = query.eq('lga_id', parseInt(effectiveLgaId))

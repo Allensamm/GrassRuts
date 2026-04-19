@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -8,6 +9,23 @@ const schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 attempts per IP per 15 minutes to prevent credential stuffing
+  const ip = getClientIp(request)
+  const rl = rateLimit({ key: `auth:signin:${ip}`, limit: 10, windowMs: 15 * 60 * 1000 })
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Please wait before trying again.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+        },
+      }
+    )
+  }
+
   try {
     const body = await request.json()
     const { email, password } = schema.parse(body)
@@ -17,9 +35,11 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      const isUnconfirmed = error.message.toLowerCase().includes('email not confirmed')
+      // Return the same generic message for all auth failures — never reveal
+      // whether the email exists or whether the address is unconfirmed.
+      // This prevents account enumeration via error differentiation.
       return NextResponse.json(
-        { error: isUnconfirmed ? 'email_not_confirmed' : 'Invalid email or password' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       )
     }

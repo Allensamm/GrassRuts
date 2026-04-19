@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validatePhotoUrls } from '@/lib/validate-photo-urls'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -37,7 +38,10 @@ export async function POST(
       )
     }
 
-    // Verify the issue exists, is still active, and is in the user's LGA
+    // Verify the issue exists, is still active, and is in the user's LGA.
+    // Important: return the same 404 for both "not found" and "wrong LGA" so
+    // an attacker cannot enumerate issue IDs or infer LGA membership from the
+    // error code (IDOR prevention).
     const { data: issue } = await supabase
       .from('issues')
       .select('id, status, lga_id')
@@ -45,16 +49,14 @@ export async function POST(
       .single()
 
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
-    if (issue.status === 'resolved' || issue.status === 'verified') {
-      return NextResponse.json({ error: 'This issue has already been resolved' }, { status: 400 })
+
+    // LGA mismatch — return 404 (not 403) to avoid revealing that the issue exists
+    if (profile.lga_id && issue.lga_id !== profile.lga_id) {
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
-    // Users can only report issues in their own LGA
-    if (profile.lga_id && issue.lga_id !== profile.lga_id) {
-      return NextResponse.json(
-        { error: 'You can only report issues in your registered LGA.' },
-        { status: 403 }
-      )
+    if (issue.status === 'resolved' || issue.status === 'verified') {
+      return NextResponse.json({ error: 'This issue has already been resolved' }, { status: 400 })
     }
 
     // Insert the report (UNIQUE constraint handles duplicate reports)
@@ -75,8 +77,11 @@ export async function POST(
       return NextResponse.json({ error: reportError.message }, { status: 500 })
     }
 
-    // Store evidence if photos provided
+    // Validate and store evidence photos
     if (data.photo_urls?.length) {
+      if (!validatePhotoUrls(data.photo_urls)) {
+        return NextResponse.json({ error: 'Invalid photo URLs' }, { status: 400 })
+      }
       const evidenceRows = data.photo_urls.map(url => ({
         report_id: report.id,
         url,
