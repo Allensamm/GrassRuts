@@ -8,6 +8,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Link from 'next/link'
 import { cn, getStatusLabel, getStatusColor } from '@/lib/utils'
+import type { IssueStatus } from '@/types'
 
 // Nigeria bounds
 const NIGERIA_CENTER: [number, number] = [9.082, 8.6753]
@@ -103,9 +104,9 @@ export default function IssueMap({ issues, fitToIssues }: Props) {
                       <span className="text-xs text-gray-500">{issue.category_name}</span>
                       <span className={cn(
                         'ml-auto text-xs font-semibold px-2 py-0.5 rounded-full',
-                        getStatusColor(issue.status)
+                        getStatusColor(issue.status as IssueStatus)
                       )}>
-                        {getStatusLabel(issue.status)}
+                        {getStatusLabel(issue.status as IssueStatus)}
                       </span>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 leading-snug mb-1 line-clamp-2">
