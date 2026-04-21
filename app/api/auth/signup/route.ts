@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { isDisposableEmail } from '@/lib/disposable-emails'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -31,6 +32,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password } = schema.parse(body)
+
+    if (isDisposableEmail(email)) {
+      return NextResponse.json(
+        { error: 'Temporary or disposable email addresses are not allowed. Please use a permanent email.' },
+        { status: 400 }
+      )
+    }
 
     const supabase = await createClient()
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validatePhotoUrls } from '@/lib/validate-photo-urls'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -12,6 +13,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // IP-level rate limit: 20 votes per IP per hour
+  const ip = getClientIp(request)
+  const ipRl = rateLimit({ key: `report:ip:${ip}`, limit: 20, windowMs: 60 * 60 * 1000 })
+  if (!ipRl.success) {
+    return NextResponse.json(
+      { error: 'Too many reports from this address. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((ipRl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const { id: issueId } = await params
     const body = await request.json()
@@ -21,6 +32,15 @@ export async function POST(
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Per-user daily report limit: max 10 reports per day across all issues
+    const userRl = rateLimit({ key: `report:user:${user.id}`, limit: 10, windowMs: 24 * 60 * 60 * 1000 })
+    if (!userRl.success) {
+      return NextResponse.json(
+        { error: 'You have reached your daily report limit. You can report up to 10 issues per day.' },
+        { status: 429 }
+      )
+    }
 
     // Check user profile — block diaspora and enforce LGA match
     const { data: profile } = await supabase
@@ -57,6 +77,31 @@ export async function POST(
 
     if (issue.status === 'resolved' || issue.status === 'verified') {
       return NextResponse.json({ error: 'This issue has already been resolved' }, { status: 400 })
+    }
+
+    // Suspicious pattern: if 60%+ of reporters on this issue have accounts < 7 days old, flag it
+    const { data: recentReporters } = await supabase
+      .from('reports')
+      .select('users!inner(created_at)')
+      .eq('issue_id', issueId)
+
+    if (recentReporters && recentReporters.length >= 10) {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+      const newAccounts = recentReporters.filter((r: { users: { created_at: string }[] }) => {
+        const createdAt = Array.isArray(r.users) ? r.users[0]?.created_at : (r.users as unknown as { created_at: string })?.created_at
+        return createdAt ? new Date(createdAt).getTime() > cutoff : false
+      }).length
+      const ratio = newAccounts / recentReporters.length
+      if (ratio >= 0.6) {
+        await supabase
+          .from('issues')
+          .update({ status: 'in_review', flagged_reason: 'Suspicious voting pattern: high ratio of new accounts' })
+          .eq('id', issueId)
+        return NextResponse.json(
+          { error: 'This issue has been flagged for review due to unusual activity.' },
+          { status: 400 }
+        )
+      }
     }
 
     // Insert the report (UNIQUE constraint handles duplicate reports)
