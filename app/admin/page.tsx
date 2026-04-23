@@ -9,7 +9,8 @@ export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/')
+  if (!user) redirect('/login')
+  if (user.email !== ADMIN_EMAIL) redirect('/dashboard')
 
   const [{ data: flagged }, { data: stats }] = await Promise.all([
     supabase
