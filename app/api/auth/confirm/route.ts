@@ -27,13 +27,26 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data: { user }, error } = await supabase.auth.verifyOtp({
       token_hash,
       type: type as 'email',
     })
 
-    if (!error) {
-      return redirectTo
+    if (!error && user) {
+      // Check if user already completed profile setup
+      const { data: profile } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+
+      const destination = profile ? `${appUrl}/dashboard` : `${appUrl}/signup/profile`
+      const finalRedirect = NextResponse.redirect(destination)
+      // Copy session cookies to the new redirect response
+      redirectTo.cookies.getAll().forEach(cookie =>
+        finalRedirect.cookies.set(cookie.name, cookie.value)
+      )
+      return finalRedirect
     }
   }
 
