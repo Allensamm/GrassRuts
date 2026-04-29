@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password } = schema.parse(body)
 
+    // Also rate limit per email — 5 attempts per email per 15 minutes
+    const emailRl = rateLimit({ key: `auth:signin:email:${email.toLowerCase()}`, limit: 5, windowMs: 15 * 60 * 1000 })
+    if (!emailRl.success) {
+      return NextResponse.json(
+        { error: 'Too many login attempts for this account. Please wait 15 minutes or reset your password.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((emailRl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
     const supabase = await createClient()
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
