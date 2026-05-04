@@ -10,6 +10,34 @@ import {
   Bell, TrendingUp, Shield,
 } from 'lucide-react'
 
+const LOCATION_PAIRS = [
+  ['Badagry', 'Borno'],
+  ['Kano', 'Calabar'],
+  ['Lagos', 'Lokoja'],
+  ['Ibadan', 'Ilorin'],
+  ['Enugu', 'Ekiti'],
+  ['Warri', 'Wukari'],
+  ['Sokoto', 'Sapele'],
+  ['Benin', 'Bauchi'],
+  ['Owerri', 'Ogun'],
+  ['Maiduguri', 'Makurdi'],
+  ['Abeokuta', 'Adamawa'],
+  ['Port Harcourt', 'Plateau'],
+  ['Abuja', 'Aba'],
+  ['Yola', 'Yenagoa'],
+  ['Kaduna', 'Kogi'],
+  ['Akure', 'Awka'],
+  ['Zaria', 'Zungeru'],
+  ['Asaba', 'Anambra'],
+  ['Onitsha', 'Osun'],
+  ['Dutse', 'Delta'],
+]
+
+function randomLocationLine(): string {
+  const [a, b] = LOCATION_PAIRS[Math.floor(Math.random() * LOCATION_PAIRS.length)]
+  return `From ${a} to ${b}`
+}
+
 async function getStats() {
   try {
     const supabase = await createClient()
@@ -507,7 +535,7 @@ export default async function LandingPage() {
           <AnimateOnScroll direction="fade" className="text-center mb-16">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#E8A849]">Built For Everyone</span>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-white mt-3 mb-4">
-              From Badagry to Borno
+              {randomLocationLine()}
             </h2>
             <p className="text-white/55 text-lg max-w-lg mx-auto">
               Whether you live there, left there, or govern there — Grassruts works for you.
