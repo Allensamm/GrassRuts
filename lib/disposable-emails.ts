@@ -38,7 +38,7 @@ const DISPOSABLE_DOMAINS = new Set([
 ])
 
 export function isDisposableEmail(email: string): boolean {
-  const domain = email.split('@')[1]?.toLowerCase()
+  const domain = email.split('@').pop()?.toLowerCase()
   if (!domain) return false
   return DISPOSABLE_DOMAINS.has(domain)
 }

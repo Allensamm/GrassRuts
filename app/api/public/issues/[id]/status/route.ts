@@ -28,7 +28,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const apiKey = await verifyGovApiKey(request)
+  let apiKey
+  try {
+    apiKey = await verifyGovApiKey(request)
+  } catch {
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
   if (!apiKey) {
     return NextResponse.json({ error: 'Invalid or missing API key.' }, { status: 401 })
   }

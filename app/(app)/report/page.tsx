@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, MapPin, Camera, X, Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { enqueueReport } from '@/lib/offline/queue'
 
 const CATEGORIES = [
   { slug: 'infrastructure', name: 'Roads & Infrastructure', icon: '🛣️', description: 'Roads, bridges, drainage' },
@@ -50,6 +51,7 @@ export default function ReportPage() {
   const [loadingSimilar, setLoadingSimilar] = useState(false)
   const [createdIssueId, setCreatedIssueId] = useState<string | null>(null)
   const [isDisaspora, setIsDisaspora] = useState<boolean | null>(null)
+  const [queuedOffline, setQueuedOffline] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -159,6 +161,29 @@ export default function ReportPage() {
   const submitNewIssue = async () => {
     setSubmitting(true)
     setSubmitError('')
+
+    // Offline path: queue to IndexedDB, submit later via background sync
+    if (!navigator.onLine) {
+      try {
+        await enqueueReport({
+          category_slug: form.category_slug,
+          title:         form.title,
+          description:   form.description,
+          address:       form.address || undefined,
+          community:     form.community || undefined,
+          lat:           form.lat,
+          lng:           form.lng,
+          photo_urls:    form.photo_urls.length ? form.photo_urls : undefined,
+        })
+        setQueuedOffline(true)
+        setStep('success')
+      } catch {
+        setSubmitError('Could not queue report. Please try again.')
+      }
+      setSubmitting(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/issues', {
         method: 'POST',
@@ -213,18 +238,24 @@ export default function ReportPage() {
   if (step === 'success') {
     return (
       <div className="px-4 md:px-6 max-w-2xl py-16 text-center">
-        <div className="text-6xl mb-4">✅</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Report Submitted!</h1>
+        <div className="text-6xl mb-4">{queuedOffline ? '📬' : '✅'}</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {queuedOffline ? 'Report Saved — You\'re Offline' : 'Report Submitted!'}
+        </h1>
         <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-          Your report has been recorded. As more people from your community report this issue, it will gain visibility and escalate to the right authorities.
+          {queuedOffline
+            ? 'Your report has been saved on this device. It will be submitted automatically the next time you have an internet connection — you don\'t need to do anything.'
+            : 'Your report has been recorded. As more people from your community report this issue, it will gain visibility and escalate to the right authorities.'}
         </p>
         <div className="flex flex-col gap-3">
-          <button
-            onClick={() => router.push(`/issues/${createdIssueId}`)}
-            className="w-full bg-[#008751] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#006B40] transition-colors"
-          >
-            View Issue
-          </button>
+          {!queuedOffline && createdIssueId && (
+            <button
+              onClick={() => router.push(`/issues/${createdIssueId}`)}
+              className="w-full bg-[#008751] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#006B40] transition-colors"
+            >
+              View Issue
+            </button>
+          )}
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors"

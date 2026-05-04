@@ -40,6 +40,6 @@ export async function verifyGovApiKey(request: Request): Promise<GovApiKey | nul
   return data ?? null
 }
 
-export function hasPermission(apiKey: GovApiKey, permission: 'read' | 'write'): boolean {
-  return apiKey.permissions.includes(permission)
+export function hasPermission(apiKey: GovApiKey | null, permission: 'read' | 'write'): boolean {
+  return apiKey?.permissions?.includes(permission) ?? false
 }

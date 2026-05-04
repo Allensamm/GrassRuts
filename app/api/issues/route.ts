@@ -17,6 +17,21 @@ const schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Idempotency: if the client sends X-Idempotency-Key (offline replay),
+  // check for an existing issue with that key and return it instead of creating a duplicate.
+  const idempotencyKey = request.headers.get('X-Idempotency-Key')
+  if (idempotencyKey) {
+    const supabaseCheck = await (await import('@/lib/supabase/server')).createClient()
+    const { data: existing } = await supabaseCheck
+      .from('issues')
+      .select('id')
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle()
+    if (existing) {
+      return NextResponse.json({ success: true, issue_id: existing.id }, { status: 200 })
+    }
+  }
+
   // Rate limit: 5 new issue submissions per IP per hour
   const ip = getClientIp(request)
   const rl = rateLimit({ key: `issues:create:${ip}`, limit: 5, windowMs: 60 * 60 * 1000 })
@@ -89,13 +104,14 @@ export async function POST(request: NextRequest) {
         title: data.title,
         description: data.description,
         category_id: category.id,
-        lga_id: profile.lga_id,          // server-enforced: always the user's own LGA
+        lga_id: profile.lga_id,
         community: data.community || profile.community || null,
         address: data.address || null,
         lat: data.lat ?? null,
         lng: data.lng ?? null,
         created_by: user.id,
         report_count: 1,
+        ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       })
       .select('id')
       .single()

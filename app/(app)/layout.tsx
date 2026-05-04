@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppHeader from '@/components/layout/AppHeader'
 import BottomNav from '@/components/layout/BottomNav'
 import Sidebar from '@/components/layout/Sidebar'
+import { OfflineProvider } from '@/components/OfflineProvider'
+import OfflineBanner from '@/components/OfflineBanner'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -20,18 +22,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const raw = profileRaw as any
   const profile = {
-    id: raw.id as string,
-    full_name: raw.full_name as string,
-    lga_id: raw.lga_id as number | null,
+    id:          raw.id          as string,
+    full_name:   raw.full_name   as string,
+    lga_id:      raw.lga_id      as number | null,
     is_diaspora: raw.is_diaspora as boolean,
     lga: (Array.isArray(raw.lga) ? raw.lga[0] ?? null : raw.lga) as {
-      id: number
-      name: string
-      state: { name: string } | null
+      id: number; name: string; state: { name: string } | null
     } | null,
   }
 
-  // Fetch unread notification count
   const { count: unreadCount } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
@@ -41,23 +40,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const unreadNotifications = unreadCount ?? 0
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Desktop sidebar */}
-      <Sidebar profile={profile} unreadNotifications={unreadNotifications} />
+    <OfflineProvider
+      userId={user.id}
+      lgaId={profile.lga_id}
+      isDisaspora={profile.is_diaspora}
+    >
+      <div className="min-h-screen bg-[#F8F9FA] flex">
+        <Sidebar profile={profile} unreadNotifications={unreadNotifications} />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <AppHeader profile={profile} unreadNotifications={unreadNotifications} />
-        <main className="flex-1 pb-20 md:pb-0">
-          {children}
-        </main>
-        <BottomNav />
-        <footer className="hidden md:block border-t border-gray-100 bg-white py-3 px-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} Grassruts · A{' '}
-          <span className="font-semibold text-gray-500">join2getherwork</span>{' '}
-          product · The Root of Change
-        </footer>
+        <div className="flex-1 flex flex-col min-w-0">
+          <AppHeader profile={profile} unreadNotifications={unreadNotifications} />
+          <OfflineBanner />
+          <main className="flex-1 pb-20 md:pb-0 flex flex-col">
+            {children}
+          </main>
+          <BottomNav />
+          <footer className="hidden md:block border-t border-[#E2E8F0] bg-white py-3 px-6 text-center text-xs text-[#94A3B8]">
+            © {new Date().getFullYear()} Grassruts · A{' '}
+            <span className="font-semibold text-[#475569]">join2getherwork</span>{' '}
+            product · The Root of Change
+          </footer>
+        </div>
       </div>
-    </div>
+    </OfflineProvider>
   )
 }

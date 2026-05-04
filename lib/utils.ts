@@ -38,7 +38,7 @@ export function getStatusLabel(status: IssueStatus): string {
     resolved: 'Resolved',
     verified: 'Verified',
   }
-  return labels[status]
+  return labels[status] ?? 'Unknown'
 }
 
 export function getStatusColor(status: IssueStatus): string {
@@ -49,7 +49,7 @@ export function getStatusColor(status: IssueStatus): string {
     resolved: 'bg-green-100 text-green-800',
     verified: 'bg-emerald-100 text-emerald-800',
   }
-  return colors[status]
+  return colors[status] ?? 'bg-gray-100 text-gray-800'
 }
 
 export function getCategoryIcon(slug: IssueCategory): string {
