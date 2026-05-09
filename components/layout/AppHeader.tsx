@@ -53,7 +53,7 @@ function GlobalSearch() {
   }, [])
 
   return (
-    <div className="relative flex-1 max-w-xs lg:max-w-sm">
+    <div className="relative hidden sm:flex flex-1 max-w-xs lg:max-w-sm">
       <Search
         size={14}
         className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"

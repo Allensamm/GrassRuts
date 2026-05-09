@@ -91,6 +91,10 @@
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--gr-bg);
   color: var(--gr-text-1);
@@ -98,6 +102,12 @@ body {
   font-size: var(--text-sm);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* iPhone safe-area bottom padding (home indicator) */
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 h1, h2, h3, h4, h5, h6 {

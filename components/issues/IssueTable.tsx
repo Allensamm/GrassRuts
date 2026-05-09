@@ -54,44 +54,97 @@ function EmptyRow({ message }: { message: string }) {
 }
 
 export default function IssueTable({ issues, emptyMessage = 'No issues found' }: IssueTableProps) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse" role="table" aria-label="Community issues">
-        <thead>
-          <tr className="border-b border-[#E2E8F0]">
-            {[
-              { label: 'Issue',    width: 'min-w-[240px]' },
-              { label: 'Category', width: 'w-[120px]'     },
-              { label: 'Location', width: 'w-[140px]'     },
-              { label: 'Status',   width: 'w-[120px]'     },
-              { label: 'Reports',  width: 'w-[140px]'     },
-              { label: 'Date',     width: 'w-[100px]'     },
-              { label: '',         width: 'w-10'           },
-            ].map(col => (
-              <th
-                key={col.label}
-                scope="col"
-                className={cn(
-                  'px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]',
-                  col.width
-                )}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
+  if (issues.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <TrendingUp size={32} className="text-[#E2E8F0] mx-auto mb-3" />
+        <p className="text-sm font-medium text-[#475569]">{emptyMessage}</p>
+        <p className="text-xs text-[#94A3B8] mt-1">Issues reported in your area will appear here</p>
+      </div>
+    )
+  }
 
-        <tbody>
-          {issues.length === 0 ? (
-            <EmptyRow message={emptyMessage} />
-          ) : (
-            issues.map(issue => (
+  return (
+    <>
+      {/* ── Mobile card list (< sm) ───────────────────────────────────────── */}
+      <ul className="sm:hidden divide-y divide-[#E2E8F0]" role="list">
+        {issues.map(issue => (
+          <li key={issue.id}>
+            <Link
+              href={`/issues/${issue.id}`}
+              className="flex items-start gap-3 px-4 py-4 hover:bg-[#F8F9FA] transition-colors duration-[150ms] active:bg-[#F1F5F9]"
+            >
+              {/* Category icon */}
+              <span className="text-xl shrink-0 mt-0.5" aria-hidden="true">
+                {issue.category?.icon ?? '📋'}
+              </span>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#0F172A] line-clamp-2 leading-snug">
+                  {issue.title}
+                </p>
+                {(issue.community || issue.address) && (
+                  <p className="text-xs text-[#94A3B8] mt-0.5 truncate">
+                    {issue.community ?? issue.address}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <StatusBadge status={issue.status} />
+                  <span className="text-xs text-[#94A3B8]">
+                    {issue.report_count} report{issue.report_count !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-xs text-[#CBD5E1]">·</span>
+                  <span className="text-xs text-[#94A3B8]">
+                    {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                {/* Mini progress bar */}
+                <div className="mt-2">
+                  <ProgressBar count={issue.report_count} threshold={issue.threshold ?? 50} />
+                </div>
+              </div>
+
+              <ChevronRight size={16} strokeWidth={2} className="text-[#CBD5E1] shrink-0 mt-1" aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {/* ── Desktop table (sm+) ───────────────────────────────────────────── */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-sm border-collapse" role="table" aria-label="Community issues">
+          <thead>
+            <tr className="border-b border-[#E2E8F0]">
+              {[
+                { label: 'Issue',    width: 'min-w-[240px]' },
+                { label: 'Category', width: 'w-[120px]'     },
+                { label: 'Location', width: 'w-[140px]'     },
+                { label: 'Status',   width: 'w-[120px]'     },
+                { label: 'Reports',  width: 'w-[140px]'     },
+                { label: 'Date',     width: 'w-[100px]'     },
+                { label: '',         width: 'w-10'           },
+              ].map(col => (
+                <th
+                  key={col.label}
+                  scope="col"
+                  className={cn(
+                    'px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]',
+                    col.width
+                  )}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {issues.map(issue => (
               <tr
                 key={issue.id}
                 className="group border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8F9FA] transition-colors duration-[150ms] linear"
               >
-                {/* Issue title */}
                 <td className="px-4 py-3">
                   <Link
                     href={`/issues/${issue.id}`}
@@ -110,7 +163,6 @@ export default function IssueTable({ issues, emptyMessage = 'No issues found' }:
                   )}
                 </td>
 
-                {/* Category */}
                 <td className="px-4 py-3">
                   {issue.category ? (
                     <span className="flex items-center gap-1.5 text-[#475569]">
@@ -122,31 +174,24 @@ export default function IssueTable({ issues, emptyMessage = 'No issues found' }:
                   )}
                 </td>
 
-                {/* Location */}
                 <td className="px-4 py-3">
-                  <span className="text-xs text-[#475569] truncate block">
-                    {issue.lga?.name ?? '—'}
-                  </span>
+                  <span className="text-xs text-[#475569] truncate block">{issue.lga?.name ?? '—'}</span>
                 </td>
 
-                {/* Status */}
                 <td className="px-4 py-3">
                   <StatusBadge status={issue.status} />
                 </td>
 
-                {/* Reports progress */}
                 <td className="px-4 py-3">
                   <ProgressBar count={issue.report_count} threshold={issue.threshold ?? 50} />
                 </td>
 
-                {/* Date */}
                 <td className="px-4 py-3">
                   <span className="text-xs text-[#94A3B8] tabular whitespace-nowrap">
                     {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
                   </span>
                 </td>
 
-                {/* Action */}
                 <td className="px-4 py-3">
                   <Link
                     href={`/issues/${issue.id}`}
@@ -162,10 +207,10 @@ export default function IssueTable({ issues, emptyMessage = 'No issues found' }:
                   </Link>
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

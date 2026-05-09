@@ -51,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="flex-1 flex flex-col min-w-0">
           <AppHeader profile={profile} unreadNotifications={unreadNotifications} />
           <OfflineBanner />
-          <main className="flex-1 pb-20 md:pb-0 flex flex-col">
+          <main className="flex-1 pb-20 md:pb-0 flex flex-col min-w-0 overflow-x-hidden">
             {children}
           </main>
           <BottomNav />
