@@ -467,7 +467,6 @@ button:disabled {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
   color: #183d2e;
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
@@ -475,26 +474,8 @@ button:disabled {
   letter-spacing: -1.3px;
   line-height: 1;
 }
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px 12px 3px 12px;
-  background: #e7efdf;
-  color: #177353;
-}
-.brand-period {
-  color: #177353;
-}
 .brand-light {
   color: white;
-}
-.brand-light .brand-mark {
-  background: #dae8a0;
-}
-.brand-light .brand-period {
-  color: #dae8a0;
 }
 .nav-link {
   padding: 10px;
