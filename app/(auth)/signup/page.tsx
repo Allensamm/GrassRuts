@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
@@ -9,31 +8,42 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
 
-const schema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password must be at most 128 characters')
-    .refine(p => /[A-Z]/.test(p), 'Must contain at least one uppercase letter')
-    .refine(p => /[a-z]/.test(p), 'Must contain at least one lowercase letter')
-    .refine(p => /[0-9]/.test(p), 'Must contain at least one number'),
-  confirmPassword: z.string(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-})
+const schema = z
+  .object({
+    email: z.string().email('Enter a valid email address'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be at most 128 characters')
+      .refine(
+        (p) => /[A-Z]/.test(p),
+        'Must contain at least one uppercase letter',
+      )
+      .refine(
+        (p) => /[a-z]/.test(p),
+        'Must contain at least one lowercase letter',
+      )
+      .refine((p) => /[0-9]/.test(p), 'Must contain at least one number'),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
 
 type FormData = z.infer<typeof schema>
 
 export default function SignupPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [emailSent, setEmailSent] = useState('')
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -65,23 +75,33 @@ export default function SignupPage() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-4">
+      <div className="auth-form">
         <div className="max-w-md w-full mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex flex-col items-center gap-1">
-              <Image src="/logo.svg" alt="Grassruts" width={200} height={40} priority />
+              <Image
+                src="/logo.svg"
+                alt="Grassruts"
+                width={200}
+                height={40}
+                priority
+              />
               <p className="text-sm text-gray-500">The Root of Change</p>
             </div>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
             <div className="text-5xl mb-4">📬</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Check your email
+            </h1>
             <p className="text-gray-500 text-sm mb-4">
-              We sent a confirmation link to<br />
+              We sent a confirmation link to
+              <br />
               <span className="font-semibold text-gray-800">{emailSent}</span>
             </p>
-            <p className="text-gray-400 text-xs leading-relaxed">
-              Click the link in the email to activate your account. Check your spam folder if you don&apos;t see it.
+            <p className="text-gray-500 text-xs leading-relaxed">
+              Click the link in the email to activate your account. Check your
+              spam folder if you don&apos;t see it.
             </p>
           </div>
         </div>
@@ -90,67 +110,114 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-4">
+    <div className="auth-form">
       <div className="max-w-md w-full mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex flex-col items-center gap-1">
-            <Image src="/logo.svg" alt="Grassruts" width={200} height={40} priority />
+            <Image
+              src="/logo.svg"
+              alt="Grassruts"
+              width={200}
+              height={40}
+              priority
+            />
             <p className="text-sm text-gray-500">The Root of Change</p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Join Your Community</h1>
-          <p className="text-gray-500 text-sm mb-6">Create an account to report and track issues</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+            Join Your Community
+          </h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Create an account to report and track issues
+          </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Email
+              </label>
               <input
                 type="email"
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008751] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#177353] focus:border-transparent"
+                id="email"
+                aria-invalid={!!errors.email}
                 {...register('email')}
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="At least 8 characters"
                   autoComplete="new-password"
-                  className="w-full px-4 py-3 pr-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008751] focus:border-transparent"
+                  className="w-full px-4 py-3 pr-11 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#177353] focus:border-transparent"
+                  id="password"
+                  aria-invalid={!!errors.password}
                   {...register('password')}
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Confirm Password
+              </label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008751] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#177353] focus:border-transparent"
+                id="confirmPassword"
+                aria-invalid={!!errors.confirmPassword}
                 {...register('confirmPassword')}
               />
-              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3">
+              <div
+                role="alert"
+                className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3"
+              >
                 {error}
               </div>
             )}
@@ -158,19 +225,23 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#008751] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#006B40] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-[#177353] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#11573F] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <p className="text-xs text-gray-400 text-center mt-4 leading-relaxed">
-            By creating an account you agree that Grassruts is for community issues only — not personal grievances.
+          <p className="text-xs text-gray-500 text-center mt-4 leading-relaxed">
+            By creating an account you agree that Grassruts is for community
+            issues only — not personal grievances.
           </p>
 
           <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
-            <Link href="/login" className="text-[#008751] font-semibold hover:underline">
+            <Link
+              href="/login"
+              className="text-[#177353] font-semibold hover:underline"
+            >
               Sign in
             </Link>
           </p>

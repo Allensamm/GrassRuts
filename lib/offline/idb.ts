@@ -4,18 +4,19 @@
 //   issues_cache  — encrypted issue records (compressed + AES-GCM)
 //   profile_cache — encrypted user profile
 //   sync_meta     — unencrypted sync timestamps (not sensitive)
-//   outbox        — unencrypted pending actions (service worker reads these)
+//   outbox        — account-scoped encrypted drafts; never read by the service worker
 
 import { seal, unseal } from './crypto'
 
-const DB_NAME    = 'gr_offline'
-const DB_VERSION = 1
+const DB_NAME = 'gr_offline'
+const DB_VERSION = 2
 
 const STORE = {
-  ISSUES:  'issues_cache',
+  ISSUES: 'issues_cache',
   PROFILE: 'profile_cache',
-  META:    'sync_meta',
-  OUTBOX:  'outbox',
+  META: 'sync_meta',
+  OUTBOX: 'outbox',
+  DRAFTS: 'report_drafts',
 } as const
 
 // ── Open ─────────────────────────────────────────────────────────────────────
@@ -26,8 +27,14 @@ function openDB(): Promise<IDBDatabase> {
   if (_db) return Promise.resolve(_db)
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = e => {
+    req.onupgradeneeded = (e) => {
       const db = (e.target as IDBOpenDBRequest).result
+      // Legacy stores have no reliable account boundary. Remove them on upgrade.
+      if (e.oldVersion > 0 && e.oldVersion < 2)
+        for (const name of Array.from(db.objectStoreNames))
+          db.deleteObjectStore(name)
+      if (!db.objectStoreNames.contains(STORE.DRAFTS))
+        db.createObjectStore(STORE.DRAFTS, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(STORE.ISSUES)) {
         db.createObjectStore(STORE.ISSUES, { keyPath: 'id' })
       }
@@ -42,8 +49,11 @@ function openDB(): Promise<IDBDatabase> {
         s.createIndex('created_at', 'created_at')
       }
     }
-    req.onsuccess = () => { _db = req.result; resolve(req.result) }
-    req.onerror  = () => reject(req.error)
+    req.onsuccess = () => {
+      _db = req.result
+      resolve(req.result)
+    }
+    req.onerror = () => reject(req.error)
   })
 }
 
@@ -54,7 +64,7 @@ async function get<T>(store: string, key: IDBValidKey): Promise<T | undefined> {
   return new Promise((resolve, reject) => {
     const req = db.transaction(store, 'readonly').objectStore(store).get(key)
     req.onsuccess = () => resolve(req.result)
-    req.onerror   = () => reject(req.error)
+    req.onerror = () => reject(req.error)
   })
 }
 
@@ -63,7 +73,7 @@ async function put(store: string, value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {
     const req = db.transaction(store, 'readwrite').objectStore(store).put(value)
     req.onsuccess = () => resolve()
-    req.onerror   = () => reject(req.error)
+    req.onerror = () => reject(req.error)
   })
 }
 
@@ -72,16 +82,19 @@ async function getAll<T>(store: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const req = db.transaction(store, 'readonly').objectStore(store).getAll()
     req.onsuccess = () => resolve(req.result)
-    req.onerror   = () => reject(req.error)
+    req.onerror = () => reject(req.error)
   })
 }
 
 async function del(store: string, key: IDBValidKey): Promise<void> {
   const db = await openDB()
   return new Promise((resolve, reject) => {
-    const req = db.transaction(store, 'readwrite').objectStore(store).delete(key)
+    const req = db
+      .transaction(store, 'readwrite')
+      .objectStore(store)
+      .delete(key)
     req.onsuccess = () => resolve()
-    req.onerror   = () => reject(req.error)
+    req.onerror = () => reject(req.error)
   })
 }
 
@@ -90,7 +103,7 @@ async function count(store: string): Promise<number> {
   return new Promise((resolve, reject) => {
     const req = db.transaction(store, 'readonly').objectStore(store).count()
     req.onsuccess = () => resolve(req.result)
-    req.onerror   = () => reject(req.error)
+    req.onerror = () => reject(req.error)
   })
 }
 
@@ -100,21 +113,27 @@ async function count(store: string): Promise<number> {
 type Sealed = { id: unknown; _enc: { iv: string; ct: string } }
 
 async function encGet<T extends { id: unknown }>(
-  store: string, key: IDBValidKey
+  store: string,
+  key: IDBValidKey,
 ): Promise<T | null> {
   const row = await get<Sealed>(store, key)
   if (!row) return null
   return unseal<T>(row._enc)
 }
 
-async function encPut<T extends { id: unknown }>(store: string, data: T): Promise<void> {
+async function encPut<T extends { id: unknown }>(
+  store: string,
+  data: T,
+): Promise<void> {
   const _enc = await seal(data)
   await put(store, { id: data.id, _enc })
 }
 
-async function encGetAll<T extends { id: unknown }>(store: string): Promise<T[]> {
+async function encGetAll<T extends { id: unknown }>(
+  store: string,
+): Promise<T[]> {
   const rows = await getAll<Sealed>(store)
-  return Promise.all(rows.map(r => unseal<T>(r._enc)))
+  return Promise.all(rows.map((r) => unseal<T>(r._enc)))
 }
 
 // ── Public types ──────────────────────────────────────────────────────────────
@@ -144,6 +163,8 @@ export interface CachedProfile {
 
 export interface OutboxItem {
   id: string
+  user_id: string
+  last_error?: string
   type: 'create_issue' | 'add_report' | 'toggle_watchlist'
   payload: unknown
   created_at: string
@@ -154,32 +175,41 @@ export interface OutboxItem {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export const issueCache = {
-  put:    (issue: CachedIssue)   => encPut(STORE.ISSUES, issue),
-  putMany:(issues: CachedIssue[]) => Promise.all(issues.map(i => encPut(STORE.ISSUES, i))).then(() => undefined),
-  get:    (id: string)           => encGet<CachedIssue>(STORE.ISSUES, id),
-  getAll: ()                     => encGetAll<CachedIssue>(STORE.ISSUES),
+  put: (issue: CachedIssue) => encPut(STORE.ISSUES, issue),
+  putMany: (issues: CachedIssue[]) =>
+    Promise.all(issues.map((i) => encPut(STORE.ISSUES, i))).then(
+      () => undefined,
+    ),
+  get: (id: string) => encGet<CachedIssue>(STORE.ISSUES, id),
+  getAll: () => encGetAll<CachedIssue>(STORE.ISSUES),
 }
 
 export const profileCache = {
   put: (p: CachedProfile) => encPut(STORE.PROFILE, p),
-  get: (id: string)       => encGet<CachedProfile>(STORE.PROFILE, id),
+  get: (id: string) => encGet<CachedProfile>(STORE.PROFILE, id),
 }
 
 export const syncMeta = {
   async getLastSynced(key: string): Promise<string | null> {
-    const row = await get<{ key: string; last_synced_at: string }>(STORE.META, key)
+    const row = await get<{ key: string; last_synced_at: string }>(
+      STORE.META,
+      key,
+    )
     return row?.last_synced_at ?? null
   },
-  setLastSynced: (key: string, ts: string) => put(STORE.META, { key, last_synced_at: ts }),
+  setLastSynced: (key: string, ts: string) =>
+    put(STORE.META, { key, last_synced_at: ts }),
 }
 
 export const outboxStore = {
-  async enqueue(item: Omit<OutboxItem, 'attempts' | 'last_attempted_at'>): Promise<void> {
+  async enqueue(
+    item: Omit<OutboxItem, 'attempts' | 'last_attempted_at'>,
+  ): Promise<void> {
     await put(STORE.OUTBOX, { ...item, attempts: 0, last_attempted_at: null })
   },
-  getAll:  () => getAll<OutboxItem>(STORE.OUTBOX),
-  remove:  (id: string) => del(STORE.OUTBOX, id),
-  count:   () => count(STORE.OUTBOX),
+  getAll: () => getAll<OutboxItem>(STORE.OUTBOX),
+  remove: (id: string) => del(STORE.OUTBOX, id),
+  count: () => count(STORE.OUTBOX),
   async updateAttempt(id: string): Promise<void> {
     const item = await get<OutboxItem>(STORE.OUTBOX, id)
     if (!item) return
@@ -189,4 +219,20 @@ export const outboxStore = {
       last_attempted_at: new Date().toISOString(),
     })
   },
+}
+
+export async function clearOfflineData(): Promise<void> {
+  const db = await openDB()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(Object.values(STORE), 'readwrite')
+    for (const name of Object.values(STORE)) tx.objectStore(name).clear()
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+
+export const draftStore = {
+  save: (id: string, form: unknown) => encPut(STORE.DRAFTS, { id, form }),
+  load: (id: string) => encGet<{ id: string; form: unknown }>(STORE.DRAFTS, id),
+  remove: (id: string) => del(STORE.DRAFTS, id),
 }

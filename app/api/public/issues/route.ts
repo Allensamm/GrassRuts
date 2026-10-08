@@ -1,6 +1,7 @@
+import { one } from '@/lib/relations'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { verifyGovApiKey } from '@/lib/gov-api-auth'
+import { verifyGovApiKey, hasPermission } from '@/lib/gov-api-auth'
 
 /**
  * GET /api/public/issues
@@ -18,10 +19,13 @@ import { verifyGovApiKey } from '@/lib/gov-api-auth'
  */
 export async function GET(request: NextRequest) {
   const apiKey = await verifyGovApiKey(request)
-  if (!apiKey) {
+  if (!apiKey || !hasPermission(apiKey, 'read')) {
     return NextResponse.json(
-      { error: 'Invalid or missing API key. Pass your key in the X-API-Key header.' },
-      { status: 401 }
+      {
+        error:
+          'Invalid or missing API key. Pass your key in the X-API-Key header.',
+      },
+      { status: 401 },
     )
   }
 
@@ -30,20 +34,25 @@ export async function GET(request: NextRequest) {
   const lga_id = searchParams.get('lga_id')
   const state_id = searchParams.get('state_id')
   const category = searchParams.get('category')
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 200)
-  const offset = parseInt(searchParams.get('offset') ?? '0')
+  const limit = Math.max(
+    1,
+    Math.min(Number(searchParams.get('limit')) || 50, 200),
+  )
+  const offset = Math.max(0, Number(searchParams.get('offset')) || 0)
 
   const admin = createAdminClient()
 
   let query = admin
     .from('issues')
-    .select(`
+    .select(
+      `
       id, title, description, status, report_count, threshold,
       community, address, lat, lng,
       created_at, escalated_at, resolved_at, verified_at,
       category:categories(name, slug, icon, government_body),
       lga:lgas(id, name, state:states(id, name, code))
-    `)
+    `,
+    )
     .order('report_count', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -53,38 +62,54 @@ export async function GET(request: NextRequest) {
   // different lga_id/state_id in the URL.
   const keyHasJurisdiction = apiKey.lga_id != null || apiKey.state_id != null
   const effectiveLgaId = keyHasJurisdiction
-    ? (apiKey.lga_id ? String(apiKey.lga_id) : null)
+    ? apiKey.lga_id
+      ? String(apiKey.lga_id)
+      : null
     : lga_id
   const effectiveStateId = keyHasJurisdiction
-    ? (apiKey.state_id ? String(apiKey.state_id) : null)
+    ? apiKey.state_id
+      ? String(apiKey.state_id)
+      : null
     : state_id
 
   if (effectiveLgaId) {
     query = query.eq('lga_id', parseInt(effectiveLgaId))
-  } else if (effectiveStateId) {
+  }
+  if (effectiveStateId) {
     const { data: lgaIds } = await admin
       .from('lgas')
       .select('id')
       .eq('state_id', parseInt(effectiveStateId))
-    if (lgaIds) query = query.in('lga_id', lgaIds.map(l => l.id))
+    query = query.in(
+      'lga_id',
+      (lgaIds ?? []).map((l) => l.id),
+    )
   }
 
   if (status) query = query.eq('status', status)
 
   if (category) {
-    const { data: cat } = await admin.from('categories').select('id').eq('slug', category).single()
-    if (cat) query = query.eq('category_id', cat.id)
+    const { data: cat } = await admin
+      .from('categories')
+      .select('id')
+      .eq('slug', category)
+      .single()
+    query = query.eq('category_id', cat?.id ?? -1)
   }
 
   const { data: issues, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error)
+    return NextResponse.json(
+      { error: 'Could not load issues' },
+      { status: 500 },
+    )
 
   // Normalise nested joins
-  const normalised = (issues ?? []).map(issue => {
-    const r = issue as any
-    const cat = Array.isArray(r.category) ? r.category[0] : r.category
-    const lga = Array.isArray(r.lga) ? r.lga[0] : r.lga
-    const state = Array.isArray(lga?.state) ? lga.state[0] : lga?.state
+  const normalised = (issues ?? []).map((issue) => {
+    const r = issue
+    const cat = one(r.category)
+    const lga = one(r.lga)
+    const state = one(lga?.state)
     return {
       id: r.id,
       title: r.title,
@@ -98,14 +123,18 @@ export async function GET(request: NextRequest) {
         lat: r.lat,
         lng: r.lng,
         lga: lga ? { id: lga.id, name: lga.name } : null,
-        state: state ? { id: state.id, name: state.name, code: state.code } : null,
+        state: state
+          ? { id: state.id, name: state.name, code: state.code }
+          : null,
       },
-      category: cat ? {
-        name: cat.name,
-        slug: cat.slug,
-        icon: cat.icon,
-        responsible_body: cat.government_body,
-      } : null,
+      category: cat
+        ? {
+            name: cat.name,
+            slug: cat.slug,
+            icon: cat.icon,
+            responsible_body: cat.government_body,
+          }
+        : null,
       timestamps: {
         reported: r.created_at,
         escalated: r.escalated_at,

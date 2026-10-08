@@ -17,8 +17,11 @@ UPDATE gov_api_keys
 ALTER TABLE gov_api_keys
   ALTER COLUMN key_hash SET NOT NULL;
 
-ALTER TABLE gov_api_keys
-  ADD CONSTRAINT IF NOT EXISTS gov_api_keys_key_hash_unique UNIQUE (key_hash);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'gov_api_keys_key_hash_unique' AND conrelid = 'public.gov_api_keys'::regclass) THEN
+    ALTER TABLE public.gov_api_keys ADD CONSTRAINT gov_api_keys_key_hash_unique UNIQUE (key_hash);
+  END IF;
+END $$;
 
 -- 4. Create an index for fast lookup during authentication.
 CREATE INDEX IF NOT EXISTS idx_gov_api_keys_hash

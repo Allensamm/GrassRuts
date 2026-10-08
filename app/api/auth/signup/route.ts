@@ -10,22 +10,40 @@ const schema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters')
-    .refine(p => /[A-Z]/.test(p), 'Password must contain at least one uppercase letter')
-    .refine(p => /[a-z]/.test(p), 'Password must contain at least one lowercase letter')
-    .refine(p => /[0-9]/.test(p), 'Password must contain at least one number'),
+    .refine(
+      (p) => /[A-Z]/.test(p),
+      'Password must contain at least one uppercase letter',
+    )
+    .refine(
+      (p) => /[a-z]/.test(p),
+      'Password must contain at least one lowercase letter',
+    )
+    .refine(
+      (p) => /[0-9]/.test(p),
+      'Password must contain at least one number',
+    ),
 })
 
 export async function POST(request: NextRequest) {
   // Rate limit: 5 signups per IP per hour to slow down bulk account creation
   const ip = getClientIp(request)
-  const rl = rateLimit({ key: `auth:signup:${ip}`, limit: 5, windowMs: 60 * 60 * 1000 })
+  const rl = await rateLimit({
+    key: `auth:signup:${ip}`,
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  })
   if (!rl.success) {
     return NextResponse.json(
-      { error: 'Too many accounts created from this address. Please try again later.' },
+      {
+        error:
+          'Too many accounts created from this address. Please try again later.',
+      },
       {
         status: 429,
-        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
-      }
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        },
+      },
     )
   }
 
@@ -35,8 +53,11 @@ export async function POST(request: NextRequest) {
 
     if (isDisposableEmail(email)) {
       return NextResponse.json(
-        { error: 'Temporary or disposable email addresses are not allowed. Please use a permanent email.' },
-        { status: 400 }
+        {
+          error:
+            'Temporary or disposable email addresses are not allowed. Please use a permanent email.',
+        },
+        { status: 400 },
       )
     }
 
@@ -69,7 +90,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0].message }, { status: 400 })
+      return NextResponse.json(
+        { error: error.issues[0].message },
+        { status: 400 },
+      )
     }
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }

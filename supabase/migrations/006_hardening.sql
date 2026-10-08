@@ -2,9 +2,11 @@
 ALTER TABLE issue_updates ALTER COLUMN government_user_id DROP NOT NULL;
 
 -- Ensure resolution_confirmations has unique constraint for upsert
-ALTER TABLE resolution_confirmations
-  ADD CONSTRAINT IF NOT EXISTS resolution_confirmations_issue_user_unique
-  UNIQUE (issue_id, user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'resolution_confirmations_issue_user_unique' AND conrelid = 'public.resolution_confirmations'::regclass) THEN
+    ALTER TABLE public.resolution_confirmations ADD CONSTRAINT resolution_confirmations_issue_user_unique UNIQUE (issue_id, user_id);
+  END IF;
+END $$;
 
 -- Rate-limit helper: prevent spam reports (one per user per issue already enforced by UNIQUE)
 -- Add index for faster notification queries

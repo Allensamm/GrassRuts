@@ -32,9 +32,13 @@ export default function ShareButton({ title, reportCount, lgaName }: Props) {
   return (
     <button
       onClick={share}
-      className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-[#008751] hover:text-[#008751] transition-colors bg-white"
+      className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-[#177353] hover:text-[#177353] transition-colors bg-white"
     >
-      {copied ? <Check size={14} className="text-green-600" /> : <Share2 size={14} />}
+      {copied ? (
+        <Check size={14} className="text-green-600" />
+      ) : (
+        <Share2 size={14} />
+      )}
       {copied ? 'Copied!' : 'Share'}
     </button>
   )

@@ -1,4 +1,5 @@
-export type IssueStatus = 'pending' | 'high_priority' | 'in_review' | 'resolved' | 'verified'
+export type IssueStatus =
+  'pending' | 'high_priority' | 'in_review' | 'resolved' | 'verified'
 
 export type IssueCategory =
   | 'infrastructure'
@@ -10,7 +11,8 @@ export type IssueCategory =
   | 'environment'
   | 'other'
 
-export type GovernmentUpdateType = 'acknowledged' | 'in_progress' | 'resolved' | 'rejected'
+export type GovernmentUpdateType =
+  'acknowledged' | 'in_progress' | 'resolved' | 'rejected'
 
 export interface State {
   id: number
@@ -69,6 +71,18 @@ export interface Issue {
   creator?: User
 }
 
+export interface IssueListItem {
+  id: string
+  title: string
+  status: IssueStatus
+  report_count: number
+  threshold: number
+  community: string | null
+  created_at: string
+  category?: { name: string; icon: string; slug: string } | null
+  lga?: { name: string } | null
+}
+
 export interface Report {
   id: string
   issue_id: string
@@ -121,7 +135,12 @@ export interface IssueUpdate {
 export interface Notification {
   id: string
   user_id: string
-  type: 'threshold_reached' | 'gov_response' | 'resolution_request' | 'new_issue' | 'watchlist_update'
+  type:
+    | 'threshold_reached'
+    | 'gov_response'
+    | 'resolution_request'
+    | 'new_issue'
+    | 'watchlist_update'
   title: string
   message: string
   issue_id?: string

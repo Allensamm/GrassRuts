@@ -9,7 +9,11 @@ interface Props {
   initialWatching: boolean
 }
 
-export default function WatchlistButton({ lgaId, lgaName, initialWatching }: Props) {
+export default function WatchlistButton({
+  lgaId,
+  lgaName,
+  initialWatching,
+}: Props) {
   const [watching, setWatching] = useState(initialWatching)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -44,8 +48,8 @@ export default function WatchlistButton({ lgaId, lgaName, initialWatching }: Pro
         disabled={loading}
         className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border transition-colors disabled:opacity-60 ${
           watching
-            ? 'bg-[#008751] text-white border-[#008751]'
-            : 'bg-white text-gray-600 border-gray-200 hover:border-[#008751] hover:text-[#008751]'
+            ? 'bg-[#177353] text-white border-[#177353]'
+            : 'bg-white text-gray-600 border-gray-200 hover:border-[#177353] hover:text-[#177353]'
         }`}
       >
         {watching ? <EyeOff size={14} /> : <Eye size={14} />}

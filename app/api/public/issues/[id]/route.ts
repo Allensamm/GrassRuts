@@ -1,6 +1,11 @@
+import { one } from '@/lib/relations'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { verifyGovApiKey } from '@/lib/gov-api-auth'
+import {
+  verifyGovApiKey,
+  hasPermission,
+  getJurisdictionIssue,
+} from '@/lib/gov-api-auth'
 
 /**
  * GET /api/public/issues/:id
@@ -8,25 +13,32 @@ import { verifyGovApiKey } from '@/lib/gov-api-auth'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const apiKey = await verifyGovApiKey(request)
-  if (!apiKey) {
-    return NextResponse.json({ error: 'Invalid or missing API key.' }, { status: 401 })
+  if (!apiKey || !hasPermission(apiKey, 'read')) {
+    return NextResponse.json(
+      { error: 'Invalid or missing API key.' },
+      { status: 401 },
+    )
   }
 
   const { id } = await params
+  if (!(await getJurisdictionIssue(id, apiKey)))
+    return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
   const admin = createAdminClient()
 
   const { data: issue, error } = await admin
     .from('issues')
-    .select(`
+    .select(
+      `
       id, title, description, status, report_count, threshold,
       community, address, lat, lng,
       created_at, escalated_at, resolved_at, verified_at,
       category:categories(name, slug, icon, government_body),
       lga:lgas(id, name, state:states(id, name, code))
-    `)
+    `,
+    )
     .eq('id', id)
     .single()
 
@@ -47,18 +59,33 @@ export async function GET(
       .select('update_type, message, created_at')
       .eq('issue_id', id)
       .order('created_at', { ascending: true }),
-    admin.from('resolution_confirmations').select('id', { count: 'exact', head: true }).eq('issue_id', id).eq('is_resolved', true),
-    admin.from('resolution_confirmations').select('id', { count: 'exact', head: true }).eq('issue_id', id).eq('is_resolved', false),
+    admin
+      .from('resolution_confirmations')
+      .select('id', { count: 'exact', head: true })
+      .eq('issue_id', id)
+      .eq('is_resolved', true),
+    admin
+      .from('resolution_confirmations')
+      .select('id', { count: 'exact', head: true })
+      .eq('issue_id', id)
+      .eq('is_resolved', false),
   ])
 
   const { data: evidence } = reportIds?.length
-    ? await admin.from('evidence').select('url, type').in('report_id', reportIds.map(r => r.id)).limit(10)
+    ? await admin
+        .from('evidence')
+        .select('url, type')
+        .in(
+          'report_id',
+          reportIds.map((r) => r.id),
+        )
+        .limit(10)
     : { data: [] }
 
-  const r = issue as any
-  const cat = Array.isArray(r.category) ? r.category[0] : r.category
-  const lga = Array.isArray(r.lga) ? r.lga[0] : r.lga
-  const state = Array.isArray(lga?.state) ? lga.state[0] : lga?.state
+  const r = issue
+  const cat = one(r.category)
+  const lga = one(r.lga)
+  const state = one(lga?.state)
 
   return NextResponse.json({
     data: {
@@ -74,26 +101,32 @@ export async function GET(
         lat: r.lat,
         lng: r.lng,
         lga: lga ? { id: lga.id, name: lga.name } : null,
-        state: state ? { id: state.id, name: state.name, code: state.code } : null,
+        state: state
+          ? { id: state.id, name: state.name, code: state.code }
+          : null,
       },
-      category: cat ? {
-        name: cat.name,
-        slug: cat.slug,
-        icon: cat.icon,
-        responsible_body: cat.government_body,
-      } : null,
-      evidence: (evidence ?? []).map(e => ({ url: e.url, type: e.type })),
-      government_updates: (updates ?? []).map(u => ({
+      category: cat
+        ? {
+            name: cat.name,
+            slug: cat.slug,
+            icon: cat.icon,
+            responsible_body: cat.government_body,
+          }
+        : null,
+      evidence: (evidence ?? []).map((e) => ({ url: e.url, type: e.type })),
+      government_updates: (updates ?? []).map((u) => ({
         type: u.update_type,
         message: u.message,
         date: u.created_at,
       })),
-      resolution: r.resolved_at ? {
-        confirmed_by: confirmedCount ?? 0,
-        denied_by: deniedCount ?? 0,
-        total_reporters: r.report_count,
-        threshold_needed: Math.ceil(r.report_count * 0.5),
-      } : null,
+      resolution: r.resolved_at
+        ? {
+            confirmed_by: confirmedCount ?? 0,
+            denied_by: deniedCount ?? 0,
+            total_reporters: r.report_count,
+            threshold_needed: Math.ceil(r.report_count * 0.5),
+          }
+        : null,
       timestamps: {
         reported: r.created_at,
         escalated: r.escalated_at,

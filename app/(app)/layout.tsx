@@ -1,3 +1,4 @@
+import { one } from '@/lib/relations'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppHeader from '@/components/layout/AppHeader'
@@ -6,29 +7,32 @@ import Sidebar from '@/components/layout/Sidebar'
 import { OfflineProvider } from '@/components/OfflineProvider'
 import OfflineBanner from '@/components/OfflineBanner'
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
   const { data: profileRaw } = await supabase
     .from('users')
-    .select('id, full_name, lga_id, is_diaspora, lga:lgas(id, name, state:states(name))')
+    .select(
+      'id, full_name, lga_id, is_diaspora, lga:lgas(id, name, state:states(name))',
+    )
     .eq('id', user.id)
     .single()
 
   if (!profileRaw) redirect('/signup/profile')
 
-  const raw = profileRaw as any
+  const rawLga = one(profileRaw.lga)
   const profile = {
-    id:          raw.id          as string,
-    full_name:   raw.full_name   as string,
-    lga_id:      raw.lga_id      as number | null,
-    is_diaspora: raw.is_diaspora as boolean,
-    lga: (Array.isArray(raw.lga) ? raw.lga[0] ?? null : raw.lga) as {
-      id: number; name: string; state: { name: string } | null
-    } | null,
+    ...profileRaw,
+    lga: rawLga ? { ...rawLga, state: one(rawLga.state) } : null,
   }
 
   const { count: unreadCount } = await supabase
@@ -45,19 +49,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       lgaId={profile.lga_id}
       isDisaspora={profile.is_diaspora}
     >
-      <div className="min-h-screen bg-[#F8F9FA] flex">
+      <div className="min-h-screen bg-[#F7F8F2] flex">
         <Sidebar profile={profile} unreadNotifications={unreadNotifications} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <AppHeader profile={profile} unreadNotifications={unreadNotifications} />
+          <AppHeader
+            profile={profile}
+            unreadNotifications={unreadNotifications}
+          />
           <OfflineBanner />
-          <main className="flex-1 pb-20 md:pb-0 flex flex-col min-w-0 overflow-x-hidden">
+          <main id="main-content" className="flex-1 pb-24 md:pb-0 min-w-0">
             {children}
           </main>
           <BottomNav />
-          <footer className="hidden md:block border-t border-[#E2E8F0] bg-white py-3 px-6 text-center text-xs text-[#94A3B8]">
+          <footer className="hidden md:block border-t border-[#E2E8F0] bg-white py-3 px-6 text-center text-xs text-[#637268]">
             © {new Date().getFullYear()} Grassruts · A{' '}
-            <span className="font-semibold text-[#475569]">join2getherwork</span>{' '}
+            <span className="font-semibold text-[#475569]">
+              join2getherwork
+            </span>{' '}
             product · The Root of Change
           </footer>
         </div>

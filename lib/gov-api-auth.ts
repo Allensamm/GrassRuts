@@ -1,3 +1,4 @@
+import { rateLimit, getClientIp } from './rate-limit'
 import { createHash } from 'crypto'
 import { createAdminClient } from './supabase/admin'
 
@@ -19,7 +20,15 @@ function hashApiKey(key: string): string {
   return createHash('sha256').update(key, 'utf8').digest('hex')
 }
 
-export async function verifyGovApiKey(request: Request): Promise<GovApiKey | null> {
+export async function verifyGovApiKey(
+  request: Request,
+): Promise<GovApiKey | null> {
+  const limit = await rateLimit({
+    key: `gov:api:${getClientIp(request)}`,
+    limit: 120,
+    windowMs: 60000,
+  })
+  if (!limit.success) return null
   const authHeader = request.headers.get('Authorization')
   const apiKeyHeader = request.headers.get('X-API-Key')
 
@@ -40,6 +49,34 @@ export async function verifyGovApiKey(request: Request): Promise<GovApiKey | nul
   return data ?? null
 }
 
-export function hasPermission(apiKey: GovApiKey | null, permission: 'read' | 'write'): boolean {
+export function hasPermission(
+  apiKey: GovApiKey | null,
+  permission: 'read' | 'write',
+): boolean {
   return apiKey?.permissions?.includes(permission) ?? false
+}
+
+export async function getJurisdictionIssue(
+  id: string,
+  scope: { lga_id: number | null; state_id: number | null },
+) {
+  const admin = createAdminClient()
+  const { data: issue } = await admin
+    .from('issues')
+    .select('id,status,title,lga_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!issue) return null
+  const { data: lga } = await admin
+    .from('lgas')
+    .select('state_id')
+    .eq('id', issue.lga_id)
+    .maybeSingle()
+  const { isWithinJurisdiction } = await import('./jurisdiction')
+  return isWithinJurisdiction(scope, {
+    lga_id: issue.lga_id,
+    state_id: lga?.state_id ?? null,
+  })
+    ? issue
+    : null
 }

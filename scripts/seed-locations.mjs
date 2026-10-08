@@ -1,9 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  'https://yjusdkdbkwpepdptypyi.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqdXNka2Ria3dwZXBkcHR5cHlpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDk4OTEzMSwiZXhwIjoyMDkwNTY1MTMxfQ.sTUox2c6feL-26bFH8YUwto4BtLoQH8jMtFCJznYpcw'
-)
+// Run only against the development project you intend to seed.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error('Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.')
+}
+if (!process.argv.includes('--apply')) {
+  console.log(`Seed target: ${new URL(supabaseUrl).host}. No changes made. Add --apply to seed this project.`)
+  process.exit(0)
+}
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
 
 const STATES_AND_LGAS = [
   { name: 'Abia', code: 'AB', lgas: ['Aba North','Aba South','Arochukwu','Bende','Ikwuano','Isiala Ngwa North','Isiala Ngwa South','Isuikwuato','Obi Ngwa','Ohafia','Osisioma Ngwa','Ugwunagbo','Ukwa East','Ukwa West','Umuahia North','Umuahia South','Umu Nneochi'] },

@@ -9,9 +9,16 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
-  const rl = rateLimit({ key: `forgot-password:${ip}`, limit: 3, windowMs: 60 * 60 * 1000 })
+  const rl = await rateLimit({
+    key: `forgot-password:${ip}`,
+    limit: 3,
+    windowMs: 60 * 60 * 1000,
+  })
   if (!rl.success) {
-    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    return NextResponse.json(
+      { error: 'Too many requests. Try again later.' },
+      { status: 429 },
+    )
   }
 
   try {
@@ -27,6 +34,9 @@ export async function POST(request: NextRequest) {
     // Always return success to prevent email enumeration
     return NextResponse.json({ success: true })
   } catch {
-    return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Something went wrong.' },
+      { status: 500 },
+    )
   }
 }

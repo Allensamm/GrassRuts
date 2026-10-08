@@ -1,22 +1,36 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 
 interface Props {
+  signedIn?: boolean
   issueId: string
   userHasReported: boolean
   isResolved: boolean
   isDisaspora?: boolean
 }
 
-export default function AddReportButton({ issueId, userHasReported, isResolved, isDisaspora }: Props) {
+export default function AddReportButton({
+  issueId,
+  userHasReported,
+  isResolved,
+  isDisaspora,
+  signedIn = true,
+}: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(userHasReported)
 
+  if (!signedIn)
+    return (
+      <Link href="/login" className="button button-primary w-full">
+        Sign in to add your report
+      </Link>
+    )
   if (isDisaspora) {
     return (
       <div className="text-center py-3 px-4 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-700">
@@ -27,8 +41,9 @@ export default function AddReportButton({ issueId, userHasReported, isResolved, 
 
   if (isResolved) {
     return (
-      <div className="text-center py-3 text-sm text-gray-400">
-        This issue has been resolved.
+      <div className="text-center py-3 text-sm text-gray-500">
+        This issue is in the resolution process. See its status and timeline for
+        verification.
       </div>
     )
   }
@@ -70,9 +85,11 @@ export default function AddReportButton({ issueId, userHasReported, isResolved, 
       <button
         onClick={handleReport}
         disabled={loading}
-        className="w-full bg-[#008751] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#006B40] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full bg-[#177353] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#11573F] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? 'Adding your report...' : 'I have this problem too — Add My Report'}
+        {loading
+          ? 'Adding your report...'
+          : 'I have this problem too — Add My Report'}
       </button>
       {error && (
         <p className="text-red-500 text-xs text-center mt-2">{error}</p>

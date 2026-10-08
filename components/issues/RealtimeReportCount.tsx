@@ -12,7 +12,12 @@ interface Props {
   initialStatus: string
 }
 
-export default function RealtimeReportCount({ issueId, initialCount, threshold, initialStatus }: Props) {
+export default function RealtimeReportCount({
+  issueId,
+  initialCount,
+  threshold,
+  initialStatus,
+}: Props) {
   const [count, setCount] = useState(initialCount)
   const [status, setStatus] = useState(initialStatus)
 
@@ -23,15 +28,24 @@ export default function RealtimeReportCount({ issueId, initialCount, threshold, 
       .channel(`issue-${issueId}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'issues', filter: `id=eq.${issueId}` },
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'issues',
+          filter: `id=eq.${issueId}`,
+        },
         (payload) => {
-          if (payload.new.report_count !== undefined) setCount(payload.new.report_count as number)
-          if (payload.new.status !== undefined) setStatus(payload.new.status as string)
-        }
+          if (payload.new.report_count !== undefined)
+            setCount(payload.new.report_count as number)
+          if (payload.new.status !== undefined)
+            setStatus(payload.new.status as string)
+        },
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [issueId])
 
   const progress = getThresholdProgress(count, threshold)
@@ -44,27 +58,35 @@ export default function RealtimeReportCount({ issueId, initialCount, threshold, 
           <Users size={16} />
           {count} of {threshold} reports
         </div>
-        <span className="text-xs text-gray-400">
-          {remaining > 0 ? `${remaining} more needed to escalate` : '🔥 Threshold reached!'}
+        <span className="text-xs text-gray-500">
+          {remaining > 0
+            ? `${remaining} more to reach high priority`
+            : '🔥 Threshold reached!'}
         </span>
       </div>
       <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
-            progress >= 100 ? 'bg-red-500' : progress >= 70 ? 'bg-orange-400' : 'bg-[#008751]'
+            progress >= 100
+              ? 'bg-red-500'
+              : progress >= 70
+                ? 'bg-orange-400'
+                : 'bg-[#177353]',
           )}
           style={{ width: `${Math.min(progress, 100)}%` }}
         />
       </div>
       {status === 'high_priority' && (
         <p className="text-xs text-red-600 font-medium mt-2">
-          🚨 This issue has been escalated to government authorities.
+          🚨 The community reporting threshold has been reached. Follow the
+          timeline for official updates.
         </p>
       )}
       {status === 'pending' && (
-        <p className="text-xs text-gray-400 mt-2">
-          Issues escalate to government at {threshold} reports from the same area.
+        <p className="text-xs text-gray-500 mt-2">
+          At {threshold} reports from the same area, this issue is highlighted
+          as high priority.
         </p>
       )}
     </div>

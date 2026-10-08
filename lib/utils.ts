@@ -32,11 +32,11 @@ export function timeAgo(dateString: string): string {
 
 export function getStatusLabel(status: IssueStatus): string {
   const labels: Record<IssueStatus, string> = {
-    pending: 'Pending',
+    pending: 'Reported',
     high_priority: 'High Priority',
-    in_review: 'In Review',
-    resolved: 'Resolved',
-    verified: 'Verified',
+    in_review: 'Under review',
+    resolved: 'Awaiting verification',
+    verified: 'Community verified',
   }
   return labels[status] ?? 'Unknown'
 }

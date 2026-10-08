@@ -8,17 +8,22 @@ const schema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: issueId } = await params
+    if (!z.uuid().safeParse(issueId).success)
+      return NextResponse.json({ error: 'Invalid issue' }, { status: 400 })
     const body = await request.json()
     const { is_resolved } = schema.parse(body)
 
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Verify user is a reporter on this issue
     const { data: report } = await supabase
@@ -29,18 +34,45 @@ export async function POST(
       .single()
 
     if (!report) {
-      return NextResponse.json({ error: 'Only reporters can vote on resolution' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Only reporters can vote on resolution' },
+        { status: 403 },
+      )
     }
 
-    // Upsert the confirmation vote
-    const { error } = await supabase
+    // Immutable issue/user columns cannot be part of an upsert's UPDATE clause.
+    const { data: existing, error: lookupError } = await supabase
       .from('resolution_confirmations')
-      .upsert(
-        { issue_id: issueId, user_id: user.id, is_resolved },
-        { onConflict: 'issue_id,user_id' }
+      .select('id')
+      .eq('issue_id', issueId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (lookupError)
+      return NextResponse.json(
+        { error: 'Could not load your vote' },
+        { status: 503 },
       )
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const updateVote = () =>
+      supabase
+        .from('resolution_confirmations')
+        .update({ is_resolved })
+        .eq('issue_id', issueId)
+        .eq('user_id', user.id)
+    let { error } = existing
+      ? await updateVote()
+      : await supabase
+          .from('resolution_confirmations')
+          .insert({ issue_id: issueId, user_id: user.id, is_resolved })
+    // Two tabs may cast the first vote together; retry only the allowed mutable field.
+    if (error?.code === '23505') ({ error } = await updateVote())
+    if (error)
+      return NextResponse.json(
+        {
+          error:
+            'Voting is available to reporters when a resolution is awaiting verification.',
+        },
+        { status: error.code === '42501' ? 403 : 503 },
+      )
 
     return NextResponse.json({ success: true })
   } catch (error) {

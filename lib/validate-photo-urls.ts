@@ -12,7 +12,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
  *  2. Belongs to this project's Supabase storage origin
  *  3. Points to the 'evidence' bucket
  */
-export function validatePhotoUrls(urls: string[]): boolean {
+export function validatePhotoUrls(urls: string[], userId?: string): boolean {
   if (!SUPABASE_URL) return false
 
   let supabaseOrigin: string
@@ -22,14 +22,16 @@ export function validatePhotoUrls(urls: string[]): boolean {
     return false
   }
 
-  return urls.every(raw => {
+  return urls.every((raw) => {
     try {
       const u = new URL(raw)
       // Must be HTTPS and come from our Supabase project
       if (u.protocol !== 'https:') return false
       if (u.origin !== supabaseOrigin) return false
       // Must be under the storage/v1/object/public/evidence path
-      if (!u.pathname.startsWith('/storage/v1/object/public/evidence/')) return false
+      const prefix = '/storage/v1/object/public/evidence/'
+      if (!u.pathname.startsWith(prefix)) return false
+      if (userId && !u.pathname.startsWith(`${prefix}${userId}/`)) return false
       return true
     } catch {
       return false

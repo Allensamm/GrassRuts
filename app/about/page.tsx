@@ -1,170 +1,110 @@
 import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowRight, MapPin, Users, Shield, Zap } from 'lucide-react'
-
-export const metadata = { title: 'About — Grassruts' }
-
-const VALUES = [
-  {
-    icon: Users,
-    title: 'Community First',
-    desc: 'Every decision we make is guided by one question: does this make it easier for ordinary Nigerians to be heard?',
-  },
-  {
-    icon: Shield,
-    title: 'Radical Transparency',
-    desc: 'All issues are public. All report counts are real. No filtering, no suppression. The data belongs to the community.',
-  },
-  {
-    icon: MapPin,
-    title: 'Hyperlocal by Design',
-    desc: 'Infrastructure problems are local. Our LGA-level structure ensures reports reach exactly the right authority.',
-  },
-  {
-    icon: Zap,
-    title: 'Action Over Awareness',
-    desc: 'We don\'t just document problems — we create pressure. 50 reports triggers automatic government notification.',
-  },
-]
-
-export default function AboutPage() {
+import { MapPin, Users, Eye, Sprout, ArrowUpRight } from 'lucide-react'
+import PublicHeader from '@/components/layout/PublicHeader'
+import PublicFooter from '@/components/layout/PublicFooter'
+export const metadata = { title: 'Our purpose — Grassruts' }
+export default function About() {
   return (
-    <div className="min-h-screen bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-display)' }}>
-
-      {/* Nav */}
-      <nav className="bg-white border-b border-[#EBEBEA] px-4 py-4 sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <Image src="/logo.svg" alt="Grassruts" width={130} height={26} priority />
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/contact" className="text-sm font-medium text-[#717171] hover:text-[#1A1A1A] transition-colors">
-              Contact
-            </Link>
-            <Link
-              href="/login"
-              className="bg-[#1B7D46] hover:bg-[#0F4D2E] text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <div className="bg-[#0F4D2E] text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20">
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-[#E8A849] text-xs font-bold px-4 py-2 rounded-full mb-8 tracking-wide">
-            🇳🇬 &nbsp;A join2getherwork product
-          </div>
-          <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight mb-6">
-            The Root of Change.
-          </h1>
-          <p className="text-white/65 text-xl leading-relaxed max-w-2xl">
-            Grassruts is a civic technology platform built to give Nigerian communities the tools they need to report infrastructure problems, validate them collectively, and demand action from the right authorities.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-
-        {/* Mission */}
-        <section className="mb-20">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#1B7D46]">Our Mission</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mt-3 mb-6">
-            Why Grassruts Exists
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8 text-[#717171] text-base leading-relaxed">
-            <p>
-              Across Nigeria, communities deal with the same story: a road collapses, a borehole dries up, streetlights go dark. One person reports it. Nothing happens. Another complains online. Still nothing.
-            </p>
-            <p>
-              The problem isn't a lack of awareness — it's a lack of organized, verifiable pressure. Grassruts changes that. When 50 people from the same LGA report the same issue, it becomes data. Data that can't be ignored.
+    <>
+      <PublicHeader />
+      <main id="main-content">
+        <section className="bg-[#193E30] py-20 text-white">
+          <div className="site-container">
+            <p className="eyebrow text-[#DAE8A0]">The root of change</p>
+            <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight sm:text-6xl">
+              The places we call home
+              <br />
+              deserve a little more care.
+            </h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-green-100/80">
+              Grassruts helps Nigerian communities turn everyday concerns into a
+              shared, visible record—and keep track of what happens next.
             </p>
           </div>
         </section>
-
-        {/* How it works summary */}
-        <section className="mb-20 bg-[#F5F5F2] rounded-3xl p-10">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#1B7D46]">The Mechanism</span>
-          <h2 className="text-3xl font-extrabold text-[#1A1A1A] mt-3 mb-8">
-            50 Voices = Undeniable
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { n: '1', label: 'Report', desc: 'Any Nigerian can report a community infrastructure problem in under 2 minutes.' },
-              { n: '2', label: 'Validate', desc: 'Neighbours in the same LGA confirm the same issue, building a community-backed record.' },
-              { n: '3', label: 'Escalate', desc: 'At 50 reports, the issue is automatically flagged as HIGH PRIORITY and sent to the relevant authority.' },
-              { n: '4', label: 'Resolve', desc: 'The community — not just the government — decides when an issue is truly resolved.' },
-            ].map((step) => (
-              <div key={step.n} className="bg-white rounded-2xl p-6 border border-[#EBEBEA]">
-                <div className="text-3xl font-black text-[#1B7D46]/20 mb-3">{step.n}</div>
-                <p className="font-bold text-[#1A1A1A] mb-2">{step.label}</p>
-                <p className="text-sm text-[#717171] leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
+        <section className="site-container section-space">
+          <div className="grid gap-10 md:grid-cols-2">
+            <div>
+              <p className="eyebrow">Why we’re here</p>
+              <h2 className="mt-3 text-3xl font-semibold leading-tight">
+                A concern is easier to overlook.
+                <br />A community is harder to ignore.
+              </h2>
+            </div>
+            <div className="space-y-5 leading-8 text-[#52635B]">
+              <p>
+                A broken road or an unreliable water supply affects more than a
+                single household. But the people living with the problem often
+                have no shared place to document it.
+              </p>
+              <p>
+                Grassruts brings those experiences together. Residents can
+                report issues, support concerns in their local area, follow
+                authority responses, and verify resolutions. We are independent
+                and non-partisan.
+              </p>
+            </div>
           </div>
         </section>
-
-        {/* Values */}
-        <section className="mb-20">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#1B7D46]">What We Believe</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mt-3 mb-10">
-            Our Values
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {VALUES.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white border border-[#EBEBEA] rounded-2xl p-7 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-[#F0FAF4] rounded-xl flex items-center justify-center mb-4">
-                  <Icon size={22} className="text-[#1B7D46]" />
+        <section className="bg-[#EDF2E8] section-space">
+          <div className="site-container">
+            <p className="eyebrow">What guides us</p>
+            <div className="mt-7 grid gap-5 md:grid-cols-2">
+              {[
+                {
+                  Icon: Users,
+                  title: 'People at the centre',
+                  text: 'Reporting should be understandable, accessible, and useful to the people affected.',
+                },
+                {
+                  Icon: MapPin,
+                  title: 'Local knowledge matters',
+                  text: 'Residents bring the context that a national headline or a distant dashboard can miss.',
+                },
+                {
+                  Icon: Eye,
+                  title: 'Progress should be visible',
+                  text: 'A report, an official response, and a community-verified resolution are different milestones. We show the difference.',
+                },
+                {
+                  Icon: Sprout,
+                  title: 'Participation adds up',
+                  text: 'Community support helps highlight an issue. It does not replace emergency services or guarantee government action.',
+                },
+              ].map(({ Icon, title, text }) => (
+                <div key={title} className="civic-card p-7">
+                  <Icon size={27} className="mb-6 text-[#177353]" />
+                  <h3 className="text-xl font-semibold">{title}</h3>
+                  <p className="mt-3 leading-7 text-[#52635B]">{text}</p>
                 </div>
-                <h3 className="font-bold text-[#1A1A1A] text-lg mb-2">{title}</h3>
-                <p className="text-[#717171] text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
-
-        {/* Built by */}
-        <section className="mb-20 border-t border-[#EBEBEA] pt-16">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#1B7D46]">The Builder</span>
-          <h2 className="text-3xl font-extrabold text-[#1A1A1A] mt-3 mb-6">
-            Built by join2getherwork
-          </h2>
-          <p className="text-[#717171] text-base leading-relaxed max-w-2xl mb-6">
-            Grassruts is a product of <strong className="text-[#1A1A1A]">join2getherwork</strong>, a studio building civic and community technology for African communities. We believe technology should serve people — not just entertain them.
-          </p>
-          <p className="text-[#717171] text-base leading-relaxed max-w-2xl">
-            Grassruts is non-partisan. We don't take sides, we don't favour states or parties. We only care about one thing: making it easier for communities to get the infrastructure they were promised.
-          </p>
+        <section className="site-container section-space">
+          <div className="community-callout">
+            <div>
+              <p className="eyebrow text-[#DAE8A0]">Built by join2getherwork</p>
+              <h2 className="mt-3 text-3xl font-semibold">
+                For the everyday work
+                <br />
+                of a better community.
+              </h2>
+              <p className="mt-4 text-green-100/80">
+                Have an idea, a partnership, or a question? We’d like to hear
+                it.
+              </p>
+            </div>
+            <Link
+              href="/contact"
+              className="button bg-[#DAE8A0] text-[#183D2E]"
+            >
+              Get in touch <ArrowUpRight size={18} />
+            </Link>
+          </div>
         </section>
-
-        {/* Press kit note */}
-        <section id="press" className="mb-16 bg-[#0F4D2E] rounded-3xl p-10 text-white">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#E8A849]">Press & Media</span>
-          <h2 className="text-2xl font-extrabold mt-3 mb-4">
-            Press Kit
-          </h2>
-          <p className="text-white/65 leading-relaxed mb-6">
-            For media inquiries, interview requests, brand assets (logo, screenshots, brand guidelines), or partnership discussions — reach out to our team directly.
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 bg-[#D97B34] hover:bg-[#C06A25] text-white px-6 py-3 rounded-xl font-bold text-sm transition-all hover:-translate-y-px"
-          >
-            Contact the Team <ArrowRight size={16} />
-          </Link>
-        </section>
-
-        <div className="flex items-center justify-between pt-6 border-t border-[#EBEBEA]">
-          <Link href="/" className="text-[#1B7D46] text-sm font-semibold hover:underline">
-            ← Back to Grassruts
-          </Link>
-          <Link href="/contact" className="text-[#717171] text-sm hover:text-[#1A1A1A] transition-colors">
-            Get in touch →
-          </Link>
-        </div>
-      </div>
-    </div>
+      </main>
+      <PublicFooter />
+    </>
   )
 }

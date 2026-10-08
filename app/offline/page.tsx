@@ -1,20 +1,26 @@
+import Link from 'next/link'
+import { WifiOff } from 'lucide-react'
 export default function OfflinePage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
-      <div className="text-6xl mb-4">📡</div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re offline</h1>
-      <p className="text-gray-500 text-sm max-w-xs mb-6">
-        No internet connection detected. Pages you&apos;ve visited before are still available below.
+    <main
+      id="main-content"
+      className="site-container flex min-h-screen flex-col items-center justify-center text-center"
+    >
+      <span className="journey-icon mb-6">
+        <WifiOff size={24} />
+      </span>
+      <p className="eyebrow">Connection interrupted</p>
+      <h1 className="mt-3 text-3xl font-semibold">
+        We’ll be here when you’re back.
+      </h1>
+      <p className="mt-4 max-w-md leading-7 text-[#52635B]">
+        Reconnect to view community reports. Private account pages are not
+        stored for offline browsing. Keep any open report tab available; saved
+        reports can be retried there while signed in.
       </p>
-      <a
-        href="/dashboard"
-        className="bg-[#008751] text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#006B40] transition-colors"
-      >
-        Go to Dashboard
-      </a>
-      <p className="text-xs text-gray-400 mt-4">
-        Your reports will sync automatically when you&apos;re back online.
-      </p>
-    </div>
+      <Link href="/dashboard" className="button button-primary mt-7">
+        Try connecting again
+      </Link>
+    </main>
   )
 }

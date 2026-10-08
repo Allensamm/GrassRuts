@@ -1,7 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/report', '/profile', '/explore', '/notifications', '/my-reports']
+const PROTECTED_PATHS = [
+  '/dashboard',
+  '/report',
+  '/profile',
+  '/notifications',
+  '/my-reports',
+]
 
 // State-mutating methods we want to protect from cross-site forgery
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -26,12 +32,12 @@ export async function proxy(request: NextRequest) {
   if (
     CSRF_METHODS.has(request.method) &&
     pathname.startsWith('/api/') &&
-    !CSRF_EXEMPT.some(p => pathname.startsWith(p)) &&
+    !CSRF_EXEMPT.some((p) => pathname.startsWith(p)) &&
     !originMatchesHost(request)
   ) {
     return NextResponse.json(
       { error: 'Forbidden: cross-origin request rejected' },
-      { status: 403 }
+      { status: 403 },
     )
   }
 
@@ -46,14 +52,16 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          )
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           )
         },
       },
-    }
+    },
   )
 
   const {

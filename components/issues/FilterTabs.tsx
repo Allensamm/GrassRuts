@@ -11,7 +11,11 @@ const TABS = [
   { label: 'Resolved', value: 'resolved' },
 ]
 
-export default function FilterTabs({ activeFilter }: { activeFilter?: string }) {
+export default function FilterTabs({
+  activeFilter,
+}: {
+  activeFilter?: string
+}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -37,8 +41,8 @@ export default function FilterTabs({ activeFilter }: { activeFilter?: string }) 
             className={cn(
               'shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap',
               isActive
-                ? 'bg-[#008751] text-white'
-                : 'bg-white border border-gray-200 text-gray-600 hover:border-[#008751] hover:text-[#008751]'
+                ? 'bg-[#177353] text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:border-[#177353] hover:text-[#177353]',
             )}
           >
             {tab.label}

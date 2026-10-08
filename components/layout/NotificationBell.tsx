@@ -10,7 +10,10 @@ interface Props {
   initialUnreadCount: number
 }
 
-export default function NotificationBell({ userId, initialUnreadCount }: Props) {
+export default function NotificationBell({
+  userId,
+  initialUnreadCount,
+}: Props) {
   const [count, setCount] = useState(initialUnreadCount)
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Props) 
           table: 'notifications',
           filter: `user_id=eq.${userId}`,
         },
-        () => setCount(c => c + 1)
+        () => setCount((c) => c + 1),
       )
       .on(
         'postgres_changes',
@@ -44,11 +47,13 @@ export default function NotificationBell({ userId, initialUnreadCount }: Props) 
             .eq('user_id', userId)
             .eq('is_read', false)
             .then(({ count: c }) => setCount(c ?? 0))
-        }
+        },
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [userId])
 
   return (
@@ -58,7 +63,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Props) 
     >
       <Bell size={20} className="text-gray-600" />
       {count > 0 && (
-        <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+        <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-0.5">
           {count > 9 ? '9+' : count}
         </span>
       )}

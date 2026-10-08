@@ -8,7 +8,6 @@ function useCountUp(target: number, started: boolean, duration = 2400) {
 
   useEffect(() => {
     if (!started) return
-    if (target === 0) { setCount(0); return }
 
     let startTime: number
     const animate = (timestamp: number) => {
@@ -73,7 +72,7 @@ export default function StatsSection({
           observer.unobserve(el)
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -81,10 +80,30 @@ export default function StatsSection({
 
   return (
     <div ref={ref} className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-      <StatItem value={totalIssues} label="Issues Reported" icon={Bell} started={started} />
-      <StatItem value={totalReports} label="Community Reports" icon={Users} started={started} />
-      <StatItem value={activeLgas} label="LGAs Active" icon={MapPin} started={started} />
-      <StatItem value={resolvedIssues} label="Issues Resolved" icon={CheckCircle2} started={started} />
+      <StatItem
+        value={totalIssues}
+        label="Issues Reported"
+        icon={Bell}
+        started={started}
+      />
+      <StatItem
+        value={totalReports}
+        label="Community Reports"
+        icon={Users}
+        started={started}
+      />
+      <StatItem
+        value={activeLgas}
+        label="LGAs Active"
+        icon={MapPin}
+        started={started}
+      />
+      <StatItem
+        value={resolvedIssues}
+        label="Issues Resolved"
+        icon={CheckCircle2}
+        started={started}
+      />
     </div>
   )
 }

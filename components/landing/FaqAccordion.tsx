@@ -14,7 +14,7 @@ const FAQS = [
   },
   {
     q: 'What happens when an issue reaches 50 reports?',
-    a: 'It becomes HIGH PRIORITY and is automatically flagged to the relevant government authority — whether that\'s the Ministry of Works, State Water Corporation, or your LGA council. The issue becomes an official record with timestamps, report count, and evidence that\'s hard to ignore.',
+    a: "It becomes HIGH PRIORITY and is automatically flagged to the relevant government authority — whether that's the Ministry of Works, State Water Corporation, or your LGA council. The issue becomes an official record with timestamps, report count, and evidence that's hard to ignore.",
   },
   {
     q: 'Can the government remove or hide an issue?',
@@ -37,7 +37,7 @@ const FAQS = [
     a: 'Three layers of protection: (1) Your report is automatically locked to your registered LGA — you literally cannot file for another area. (2) AI moderation checks every submission and rejects personal requests like "I need money" or individual complaints. (3) The 50-report threshold is itself a filter — fake issues won\'t get 50 real neighbours to confirm them.',
   },
   {
-    q: 'What if the government marks an issue resolved but it isn\'t?',
+    q: "What if the government marks an issue resolved but it isn't?",
     a: 'The community has the final say. When government marks something resolved, the original reporters receive a notification asking "Is it actually fixed?" The issue only moves to VERIFIED status when 50%+ of reporters confirm. If they don\'t, it goes back to HIGH PRIORITY automatically.',
   },
   {
@@ -62,8 +62,10 @@ export default function FaqAccordion() {
             </span>
             <ChevronDown
               size={18}
-              className="shrink-0 text-[#008751] transition-transform duration-300"
-              style={{ transform: open === i ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              className="shrink-0 text-[#177353] transition-transform duration-300"
+              style={{
+                transform: open === i ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
             />
           </button>
           <div

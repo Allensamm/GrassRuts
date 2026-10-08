@@ -16,10 +16,10 @@ const CATEGORIES = [
 
 const STATUSES = [
   { value: 'high_priority', label: '🔥 High Priority' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'pending', label: 'Reported' },
   { value: 'in_review', label: 'In Review' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'verified', label: 'Verified' },
+  { value: 'resolved', label: 'Awaiting verification' },
+  { value: 'verified', label: 'Community verified' },
 ]
 
 interface Props {
@@ -30,7 +30,13 @@ interface Props {
   activeView: string
 }
 
-export default function ExploreFilters({ states, activeCategory, activeStatus, activeState, activeView }: Props) {
+export default function ExploreFilters({
+  states,
+  activeCategory,
+  activeStatus,
+  activeState,
+  activeView,
+}: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -38,6 +44,7 @@ export default function ExploreFilters({ states, activeCategory, activeStatus, a
     const params = new URLSearchParams(searchParams.toString())
     if (value) params.set(key, value)
     else params.delete(key)
+    params.delete('page')
     router.push(`/explore?${params.toString()}`)
   }
 
@@ -50,7 +57,9 @@ export default function ExploreFilters({ states, activeCategory, activeStatus, a
           <button
             onClick={() => update('view', undefined)}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeView !== 'map' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'
+              activeView !== 'map'
+                ? 'bg-white shadow-sm text-gray-900'
+                : 'text-gray-500'
             }`}
           >
             <List size={14} /> List
@@ -58,7 +67,9 @@ export default function ExploreFilters({ states, activeCategory, activeStatus, a
           <button
             onClick={() => update('view', 'map')}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeView === 'map' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'
+              activeView === 'map'
+                ? 'bg-white shadow-sm text-gray-900'
+                : 'text-gray-500'
             }`}
           >
             <Map size={14} /> Map
@@ -70,17 +81,26 @@ export default function ExploreFilters({ states, activeCategory, activeStatus, a
           <button
             onClick={() => update('category', undefined)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              !activeCategory ? 'bg-[#008751] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#008751]'
+              !activeCategory
+                ? 'bg-[#177353] text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:border-[#177353]'
             }`}
           >
             All
           </button>
-          {CATEGORIES.map(cat => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat.slug}
-              onClick={() => update('category', activeCategory === cat.slug ? undefined : cat.slug)}
+              onClick={() =>
+                update(
+                  'category',
+                  activeCategory === cat.slug ? undefined : cat.slug,
+                )
+              }
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                activeCategory === cat.slug ? 'bg-[#008751] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-[#008751]'
+                activeCategory === cat.slug
+                  ? 'bg-[#177353] text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-[#177353]'
               }`}
             >
               {cat.icon} {cat.label}
@@ -92,24 +112,30 @@ export default function ExploreFilters({ states, activeCategory, activeStatus, a
       {/* Status + State row */}
       <div className="flex gap-2">
         <select
+          aria-label="Filter by status"
           value={activeStatus ?? ''}
-          onChange={e => update('status', e.target.value || undefined)}
-          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#008751]"
+          onChange={(e) => update('status', e.target.value || undefined)}
+          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#177353]"
         >
           <option value="">All statuses</option>
-          {STATUSES.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+          {STATUSES.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </select>
 
         <select
+          aria-label="Filter by state"
           value={activeState ?? ''}
-          onChange={e => update('state', e.target.value || undefined)}
-          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#008751]"
+          onChange={(e) => update('state', e.target.value || undefined)}
+          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#177353]"
         >
           <option value="">All states</option>
-          {states.map(s => (
-            <option key={s.id} value={String(s.id)}>{s.name}</option>
+          {states.map((s) => (
+            <option key={s.id} value={String(s.id)}>
+              {s.name}
+            </option>
           ))}
         </select>
       </div>
