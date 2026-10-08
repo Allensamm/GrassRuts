@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Brand } from './PublicHeader'
+import { Brand } from './Brand'
 
 export default function PublicFooter() {
   return (

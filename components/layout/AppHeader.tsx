@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Bell, Search } from 'lucide-react'
-import { Brand } from './PublicHeader'
+import { Brand } from './Brand'
 interface Props {
   profile: {
     id: string

@@ -10,7 +10,7 @@ import {
   Plus,
   ArrowUpRight,
 } from 'lucide-react'
-import { Brand } from './PublicHeader'
+import { Brand } from './Brand'
 interface Props {
   profile: {
     id: string
